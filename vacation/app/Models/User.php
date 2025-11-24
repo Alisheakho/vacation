@@ -6,12 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
+use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
+    use HasRoles;
     /**
      * The attributes that are mass assignable.
      *
@@ -44,5 +45,22 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+  /*      protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'branch_id',
+        'annual_balance',
+    ];
+ */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function managedBranch()
+    {
+        return $this->hasOne(Branch::class, 'manager_id');
     }
 }
