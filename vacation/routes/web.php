@@ -1,11 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\AuthController;
 Route::get('/', function () {
     return view('welcome');
 });
-use App\Http\Controllers\LeaveRequestController;
+
+/* use App\Http\Controllers\LeaveRequestController;
 
 Route::middleware(['auth', 'role:employee'])->group(function () {
     Route::get('/leaves/create', [LeaveRequestController::class, 'create'])
@@ -26,3 +27,4 @@ Route::middleware(['auth', 'role:hr'])->group(function () {
 Route::middleware(['auth', 'permission:leave.approve.short'])->group(function () {
     // راوتات الموافقة على الإجازات القصيرة
 });
+ */
