@@ -47,6 +47,25 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
         ];
     }
+    protected static function booted()
+{
+    static::created(function ($user) {
+
+ 
+        if ($user->email === env('ADMIN_EMAIL')) {
+
+         
+            if (! \Spatie\Permission\Models\Role::where('name', 'admin')->exists()) {
+                \Spatie\Permission\Models\Role::create(['name' => 'admin']);
+            }
+
+         
+            $user->assignRole('admin');
+        }
+
+    });
+}
+
     public function getJWTIdentifier()
 {
     return $this->getKey();

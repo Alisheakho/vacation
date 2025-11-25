@@ -9,4 +9,9 @@ use App\Http\Controllers\AuthController;
     return $request->user();
 })->middleware('auth:sanctum'); */
 
- Route::post('r', [AuthController::class,'r']);
+   Route::post('login', [AuthController::class,'login']);
+ Route::middleware(['auth:api', 'role:admin'])->group(function () {
+   Route::post('r', [AuthController::class,'r']);
+   
+    Route::post('/branches', [BranchController::class, 'store']);
+});

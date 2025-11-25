@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Hash; 
 class AuthController extends Controller
 {
 
@@ -12,32 +12,30 @@ class AuthController extends Controller
     {
    
      try {
-            // Validation
-            $validateData = $request->validate([
-                "email" => "required|string|max:255|email|unique:users,email",
-                "password" => "required|string|min:6|confirmed",
-                "name" => "required|string|max:255",
-               
-            ]);
+           $current = auth()->user();
 
-     
+    if (! $current || ! $current->hasRole('admin')) {
+        return response()->json([
+            'message' => 'Only admin can create accounts.'
+        ], 403);
+    }
 
-         
-            $user = User::create([
-                "email" => $validateData["email"],
-                "password" => bcrypt($validateData['password']),
-                "name" => $validateData['name'],
-            ]);
+    $validated = $request->validate([
+        'name' => 'required',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|confirmed'
+    ]);
 
-           
-            // Generate Token
-            $token = auth('api')->login($user);
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'password' => bcrypt($validated['password']),
+    ]);
 
+    // افتراضياً كل مستخدم جديد role=user
+    $user->assignRole('user');
 
-return response()->json([
-    'access_token' => $token,
-    'token_type' => 'bearer'
-]);
+    return response()->json($user, 201);
 
      
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -77,29 +75,21 @@ return response()->json([
        $token = JWTAuth::fromUser($user);
 
 
-       $additionalData = null;
-       if ($user->role === 'teacher') {
-           $additionalData = Teacher::where('user_id', $user->id)->first();
-
-       } elseif ($user->role === 'student') {
-           $additionalData = Student::where('user_id', $user->id)->first();
-       }
-
-       if($user->role === 'teacher'){
+       if(1==1){
  return response()->json([
     'user' => [
 
         'name' => $user->name,
         'email' => $user->email,
-        'role' => $user->role,
+ 
     ],
-    $user->role =>[
+/*     $user->role =>[
      'gander' =>  $additionalData->gander,
      'phoneNumber' => $additionalData->phoneNumber,
      'region' => $additionalData->region->name,
      'is_banned' => $additionalData->is_banned,
      'specialization'=>$additionalData->specialization->name,
-    ],
+    ], */
     'token' => $token,
     'status'=>200
 
