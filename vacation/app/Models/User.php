@@ -19,6 +19,8 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var list<string>
      */
+        protected string $guard_name = 'api';
+
     protected $fillable = [
         'name',
         'email',
@@ -71,6 +73,10 @@ class User extends Authenticatable implements JWTSubject
     return $this->getKey();
 }
 
+    protected function getDefaultGuardName(): string
+    {
+        return $this->guard_name;
+    }
 public function getJWTCustomClaims()
 {
     return [];

@@ -9,9 +9,13 @@ use App\Http\Controllers\AuthController;
     return $request->user();
 })->middleware('auth:sanctum'); */
 
-   Route::post('login', [AuthController::class,'login']);
- Route::middleware(['auth:api', 'role:admin'])->group(function () {
-   Route::post('r', [AuthController::class,'r']);
+  Route::post('login', [AuthController::class,'login']); 
+ Route::middleware(['check.token', 'role:admin'])->group(function () {
+   Route::post('register', [AuthController::class,'register']);
    
     Route::post('/branches', [BranchController::class, 'store']);
+}); 
+Route::middleware(['auth:api', 'permission:leave.manage'])->get('/test', function () {
+    return auth()->user()->getRoleNames();
 });
+   Route::post('logout', [AuthController:: class,'logout']);

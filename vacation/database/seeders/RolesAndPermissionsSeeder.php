@@ -10,42 +10,62 @@ class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
+        // مهم جداً حتى ما يضل كاش قديم
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // الصلاحيات (تقدّر تزيد عليها)
-        Permission::firstOrCreate(['name' => 'leave.create']);
-        Permission::firstOrCreate(['name' => 'leave.view.own']);
-        Permission::firstOrCreate(['name' => 'leave.view.all']);
-        Permission::firstOrCreate(['name' => 'leave.approve.short']); // مسؤول فرع
-        Permission::firstOrCreate(['name' => 'leave.review.hr']);     // HR
-        Permission::firstOrCreate(['name' => 'leave.approve.long']);  // مدير إدارة
-        Permission::firstOrCreate(['name' => 'leave.manage']);        // أدمن
+        // ============================
+        // ⚡ الصلاحيات مع guard api
+        // ============================
+        $permissions = [
+            'leave.create',
+            'leave.view.own',
+            'leave.view.all',
+            'leave.approve.short', // مسؤول فرع
+            'leave.review.hr',     // HR
+            'leave.approve.long',  // مدير إدارة
+            'leave.manage',        // أدمن
+        ];
 
-        // الأدوار
-        $employee      = Role::firstOrCreate(['name' => 'employee']);
-        $hr            = Role::firstOrCreate(['name' => 'hr']);
-        $branchManager = Role::firstOrCreate(['name' => 'branch_manager']);
-        $deptManager   = Role::firstOrCreate(['name' => 'dept_manager']);
-        $admin         = Role::firstOrCreate(['name' => 'admin']);
+        foreach ($permissions as $perm) {
+            Permission::firstOrCreate(
+                ['name' => $perm, 'guard_name' => 'api']
+            );
+        }
 
-        // ربط الصلاحيات بالأدوار
-        $employee->givePermissionTo(['leave.create', 'leave.view.own']);
+        // ============================
+        // ⚡ الأدوار مع guard api
+        // ============================
+        $employee      = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'api']);
+        $hr            = Role::firstOrCreate(['name' => 'hr', 'guard_name' => 'api']);
+        $branchManager = Role::firstOrCreate(['name' => 'branch_manager', 'guard_name' => 'api']);
+        $deptManager   = Role::firstOrCreate(['name' => 'dept_manager', 'guard_name' => 'api']);
+        $admin         = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api']);
 
-        $hr->givePermissionTo([
+        // ============================
+        // ⚡ ربط الصلاحيات مع الأدوار
+        // ============================
+
+        $employee->syncPermissions([
+            'leave.create',
+            'leave.view.own',
+        ]);
+
+        $hr->syncPermissions([
             'leave.view.all',
             'leave.review.hr',
         ]);
 
-        $branchManager->givePermissionTo([
+        $branchManager->syncPermissions([
             'leave.view.all',
             'leave.approve.short',
         ]);
 
-        $deptManager->givePermissionTo([
+        $deptManager->syncPermissions([
             'leave.view.all',
             'leave.approve.long',
         ]);
 
-        $admin->givePermissionTo(Permission::all());
+        // أدمن ياخد كل شي
+        $admin->syncPermissions(Permission::where('guard_name', 'api')->get());
     }
 }

@@ -3,22 +3,24 @@
 namespace App\Http\Controllers;
 use App\Models\User;
 
+use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash; 
 class AuthController extends Controller
 {
 
-   public function r(Request $request)
+   public function register(Request $request)
     {
    
      try {
-           $current = auth()->user();
+   /*         $current = auth()->user();
 
     if (! $current || ! $current->hasRole('admin')) {
         return response()->json([
             'message' => 'Only admin can create accounts.'
         ], 403);
-    }
+    } */
 
     $validated = $request->validate([
         'name' => 'required',
@@ -33,7 +35,7 @@ class AuthController extends Controller
     ]);
 
     // افتراضياً كل مستخدم جديد role=user
-    $user->assignRole('user');
+    $user->assignRole('employee');
 
     return response()->json($user, 201);
 
