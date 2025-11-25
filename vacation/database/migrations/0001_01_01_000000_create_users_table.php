@@ -17,8 +17,12 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->foreignId('branch_id')->nullable()->after('id')->constrained('branches')->nullOnDelete();
-            $table->unsignedInteger('annual_balance')->default(30)->after('branch_id');
+    $table->foreignId('branch_id')
+        ->nullable();
+     /*    ->constrained('branches')
+        ->nullOnDelete(); */
+
+    $table->unsignedInteger('annual_balance')->default(30);
             $table->rememberToken();
             $table->timestamps();
         });

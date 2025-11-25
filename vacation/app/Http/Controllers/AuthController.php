@@ -34,10 +34,9 @@ class AuthController extends Controller
         'password' => bcrypt($validated['password']),
     ]);
 
-    // افتراضياً كل مستخدم جديد role=user
     $user->assignRole('employee');
 
-    return response()->json($user, 201);
+    return response()->json($user);
 
      
         } catch (\Illuminate\Validation\ValidationException $e) {
