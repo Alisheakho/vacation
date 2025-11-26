@@ -10,53 +10,87 @@ use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
 
-   public function register(Request $request)
-    {
-   
-     try {
-   /*         $current = auth()->user();
+ public function register(Request $request)
+{
+    try {
 
-    if (! $current || ! $current->hasRole('admin')) {
+        // -----------------------------
+        // 1) Validate Request
+        // -----------------------------
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|confirmed',
+            'branch.name' => 'required|string|max:255',
+            'branch.code' => 'nullable|string|max:10',
+        ]);
+
+
+        // -----------------------------
+        // 2) Run inside Transaction
+        // -----------------------------
+        return \DB::transaction(function () use ($validated) {
+
+            // -----------------------------
+            // 3) FirstOrCreate Branch
+            // -----------------------------
+            $branch = \App\Models\Branch::firstOrCreate(
+                ['name' => $validated['branch']['name']],
+                ['code' => $validated['branch']['code'] ?? null],
+               
+            );
+
+            // -----------------------------
+            // 4) Create User
+            // -----------------------------
+            $user = \App\Models\User::create([
+                'name'       => $validated['name'],
+                'email'      => $validated['email'],
+                'password'   => bcrypt($validated['password']),
+                'branch_id'  => $branch->id,
+                'annual_balance' => 30,  // أو حسب النظام عندك
+            ]);
+            if ($branch->wasRecentlyCreated) {
+                $branch->manager_id = $user->id;
+                $branch->save();
+            }
+       
+            // -----------------------------
+            // 5) Assign Default Role
+            // -----------------------------
+            $user->assignRole('employee');
+
+            // -----------------------------
+            // 6) Return JSON
+            // -----------------------------
+            return response()->json([
+                'success' => true,
+                'message' => 'User registered successfully.',
+                'data' => [
+                    'user'   => $user,
+                    'branch' => $branch,
+                ]
+            ], 201);
+
+        });
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+
         return response()->json([
-            'message' => 'Only admin can create accounts.'
-        ], 403);
-    } */
+            'success' => false,
+            'message' => 'Validation error',
+            'errors'  => $e->errors(),
+        ], 422);
 
-    $validated = $request->validate([
-        'name' => 'required',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|confirmed'
-    ]);
+    } catch (\Throwable $e) {
 
-    $user = User::create([
-        'name' => $validated['name'],
-        'email' => $validated['email'],
-        'password' => bcrypt($validated['password']),
-    ]);
-
-    $user->assignRole('employee');
-
-    return response()->json($user);
-
-     
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'Validation error',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json([
-                'status' => 500,
-                'message' => 'Database error occurred: ' . $e->getMessage(),
-            ], 500);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 500,
-                'message' => 'An unexpected error occurred: ' . $e->getMessage(),
-            ], 500);
-        } 
+        return response()->json([
+            'success' => false,
+            'message' => 'Unexpected error',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
 
    public function login(Request $request)
    {
