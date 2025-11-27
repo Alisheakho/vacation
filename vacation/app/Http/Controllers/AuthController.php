@@ -15,78 +15,88 @@ class AuthController extends Controller
     try {
 
         // -----------------------------
-        // 1) Validate Request
+        // 1) Validation
         // -----------------------------
-        $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|confirmed',
-            'branch.name' => 'required|string|max:255',
-            'branch.code' => 'nullable|string|max:10',
-        ]);
+     $validated = $request->validate([
+    'name'     => 'required|string|max:255',
+    'email'    => 'required|email|unique:users,email',
+    'password' => 'required|confirmed',
+    'role'     => 'required|in:employee,branch_manager,hr,dept_manager',
+
+    // موظف → لازم يرسل branch_id
+    'branch_id'     => 'required_if:role,employee|nullable|exists:branches,id',
+
+    // رئيس فرع و HR → لازم يرسل branch.name
+    'branch.name'   => 'required_if:role,branch_manager,hr|string|max:255',
+    'branch.code'   => 'nullable|string|max:10',
+
+    // مدير إدارة → ممنوع يرسل branch
+    'branch'        => 'prohibited_if:role,dept_manager',
+]);
 
 
         // -----------------------------
-        // 2) Run inside Transaction
+        // 2) Run inside a transaction
         // -----------------------------
         return \DB::transaction(function () use ($validated) {
 
-            // -----------------------------
-            // 3) FirstOrCreate Branch
-            // -----------------------------
-            $branch = \App\Models\Branch::firstOrCreate(
-                ['name' => $validated['branch']['name']],
-                ['code' => $validated['branch']['code'] ?? null],
-               
-            );
-
-            // -----------------------------
-            // 4) Create User
-            // -----------------------------
+            // 3) أنشئ المستخدم
             $user = \App\Models\User::create([
-                'name'       => $validated['name'],
-                'email'      => $validated['email'],
-                'password'   => bcrypt($validated['password']),
-                'branch_id'  => $branch->id,
-                'annual_balance' => 30,  // أو حسب النظام عندك
+                'name'     => $validated['name'],
+                'email'    => $validated['email'],
+                'password' => bcrypt($validated['password']),
+                'annual_balance' => 30,
             ]);
-            if ($branch->wasRecentlyCreated) {
-                $branch->manager_id = $user->id;
-                $branch->save();
-            }
-       
-            // -----------------------------
-            // 5) Assign Default Role
-            // -----------------------------
-            $user->assignRole('employee');
 
-            // -----------------------------
-            // 6) Return JSON
-            // -----------------------------
+            // 4) سلوك بحسب الرول
+          if ($validated['role'] === 'employee') {
+
+    // موظف → لازم يربط بفرع
+    $user->branch_id = $validated['branch_id'];
+    $user->save();
+
+} elseif (in_array($validated['role'], ['branch_manager', 'hr'])) {
+
+    // مدير فرع أو HR → إنشاء فرع جديد
+    $branch = Branch::firstOrCreate(
+        ['name' => $validated['branch']['name']],
+        ['code' => $validated['branch']['code'] ?? null]
+    );
+
+    // إذا كان الفرع جديد → خليه يصير المدير
+    if ($branch->wasRecentlyCreated) {
+        $branch->manager_id = $user->id;
+        $branch->save();
+    }
+
+    // اربط اليوزر بالفرع
+    $user->branch_id = $branch->id;
+    $user->save();
+
+} elseif ($validated['role'] === 'dept_manager') {
+
+    // مدير إدارة → لا فرع جديد ولا فرع موجود
+    // يبقى branch_id = null
+}
+
+
+            // 5) Assign role
+            $user->assignRole($validated['role']);
+
+            // 6) Final response
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully.',
-                'data' => [
-                    'user'   => $user,
-                    'branch' => $branch,
-                ]
+                'data' => $user
             ], 201);
 
         });
 
-    } catch (\Illuminate\Validation\ValidationException $e) {
+    } catch (\Exception $e) {
 
         return response()->json([
             'success' => false,
-            'message' => 'Validation error',
-            'errors'  => $e->errors(),
-        ], 422);
-
-    } catch (\Throwable $e) {
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Unexpected error',
+            'message' => 'Error occurred',
             'error'   => $e->getMessage(),
         ], 500);
     }
