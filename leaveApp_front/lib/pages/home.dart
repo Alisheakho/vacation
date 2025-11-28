@@ -209,7 +209,7 @@ class _HomePageState extends State<HomePage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [primaryDark, const Color(0xFF2E7D73)],
+            colors: [primaryDark, const Color(0xFF054239)],
           ),
           boxShadow: [
             BoxShadow(
