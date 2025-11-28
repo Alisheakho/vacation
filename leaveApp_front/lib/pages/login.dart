@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'home.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -177,7 +178,11 @@ class _SignInPageState extends State<SignInPage> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () {
-                              // TBD | Connect with Backend
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (context) => const HomePage(),
+                                ),
+                              );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Color(0xFF054239),
