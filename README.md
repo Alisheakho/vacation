@@ -16,7 +16,7 @@ requst for dept_manager
     "email": "omar@example.com",
     "password": "12345678",
     "password_confirmation": "12345678",
-    "role": "dept_managere"
+    "role": "dept_manager"
    
 }
 requst for hr or branch manegar
