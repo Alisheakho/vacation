@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:leave_app/pages/leave_form.dart';
+import 'package:leave_app/pages/leave_history.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,15 +12,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  // Theme colors
-  final Color primaryDark = const Color(0xFF1B5E55); // Dark Teal
-  final Color primaryLight = const Color(0xFF4DB6AC); // Lighter Teal
+  // colors | الالوان الاساسية الي عم نستخدمها بالتطبيق
+  final Color darkColor = const Color(0xFF1B5E55); // Dark Teal
+  final Color lightColor = const Color(0xFF4DB6AC); // Lighter Teal
   final Color background = const Color(0xFFF5F7FA); // Light Grey/Blue
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      // Arabic Fix
+      // Direction Fix
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: background,
@@ -71,10 +73,16 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const LeaveHistoryPage(),
+                            ),
+                          );
+                        },
                         child: Text(
                           "عرض الكل",
-                          style: TextStyle(color: primaryDark),
+                          style: TextStyle(color: darkColor),
                         ),
                       ),
                     ],
@@ -104,10 +112,24 @@ class _HomePageState extends State<HomePage> {
           ),
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
-            onTap: (index) => setState(() => _selectedIndex = index),
+            onTap: (index) {
+              setState(() => _selectedIndex = index);
+              if (index == 0) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                );
+              } else if (index == 1) {
+                _selectedIndex = 0;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const LeaveHistoryPage(),
+                  ),
+                );
+              }
+            },
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.white,
-            selectedItemColor: primaryDark,
+            selectedItemColor: darkColor,
             unselectedItemColor: Colors.grey[400],
             showUnselectedLabels: true,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
@@ -154,7 +176,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: CircleAvatar(
                   radius: 26,
-                  backgroundColor: primaryDark,
+                  backgroundColor: darkColor,
                   child: const Icon(Icons.person, color: Colors.white),
                 ),
               ),
@@ -191,7 +213,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            child: Icon(Icons.notifications_outlined, color: primaryDark),
+            child: Icon(Icons.notifications_outlined, color: darkColor),
           ),
         ],
       ),
@@ -209,11 +231,11 @@ class _HomePageState extends State<HomePage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [primaryDark, const Color(0xFF054239)],
+            colors: [darkColor, const Color(0xFF054239)],
           ),
           boxShadow: [
             BoxShadow(
-              color: primaryDark.withOpacity(0.4),
+              color: darkColor.withOpacity(0.4),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -366,7 +388,21 @@ class _HomePageState extends State<HomePage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            if (title == 'طلب جديد') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddLeavePage()),
+              );
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const LeaveHistoryPage(),
+                ),
+              );
+            }
+          },
+
           borderRadius: BorderRadius.circular(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
