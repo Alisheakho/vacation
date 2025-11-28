@@ -2,6 +2,21 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Events\SendMessage;
+use Illuminate\Http\Request;
+
+// هذا الراوت لإرسال رسالة تجريبية
+Route::get('/send-msg', function (Request $request) {
+    
+    // مثلاً نرسل للمستخدم رقم 1 (تأكد أنه موجود في الداتا بيز)
+    $receiverId = 1; 
+    $message = "مرحبا! هذه رسالة تجريبية من بوشر.";
+
+    // إطلاق الحدث
+    SendMessage::dispatch($message, $receiverId);
+
+    return "تم إرسال الرسالة للمستخدم رقم " . $receiverId;
+});
 Route::get('/', function () {
     return view('welcome');
 });
