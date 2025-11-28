@@ -1,26 +1,32 @@
 <?php
 
 namespace App\Models;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
-class User extends Authenticatable
+use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
-
+    use HasRoles;
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
+        protected string $guard_name = 'api';
+
     protected $fillable = [
         'name',
         'email',
         'password',
+        'branch_id',
+        'annual_balance'
     ];
 
     /**
@@ -44,5 +50,55 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    protected static function booted()
+{
+    static::created(function ($user) {
+
+ 
+        if ($user->email === env('ADMIN_EMAIL')) {
+
+         
+            if (! \Spatie\Permission\Models\Role::where('name', 'admin')->exists()) {
+                \Spatie\Permission\Models\Role::create(['name' => 'admin']);
+            }
+
+         
+            $user->assignRole('admin');
+        }
+
+    });
+}
+
+    public function getJWTIdentifier()
+{
+    return $this->getKey();
+}
+
+    protected function getDefaultGuardName(): string
+    {
+        return $this->guard_name;
+    }
+public function getJWTCustomClaims()
+{
+    return [];
+}
+
+  /*      protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'branch_id',
+        'annual_balance',
+    ];
+ */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function managedBranch()
+    {
+        return $this->hasOne(Branch::class, 'manager_id');
     }
 }
