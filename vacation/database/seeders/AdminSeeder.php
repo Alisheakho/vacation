@@ -21,7 +21,7 @@ class AdminSeeder extends Seeder
         if (!User::where('email', $email)->exists()) {
             $user = User::create([
                 'name' => 'Super Admin',
-                'email' => $email,
+                'email' =>'ali@gmail.com',
                 'password' => bcrypt('admin123'),
             ]);
 

@@ -1,24 +1,29 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Events\SendMessage;
-use Illuminate\Http\Request;
+use App\Models\User;
+use App\Events\SendMessage; // تأكد ان اسم ملف الايفنت صح SendMessage
 
-// هذا الراوت لإرسال رسالة تجريبية
-Route::get('/send-msg', function (Request $request) {
-    
-    // مثلاً نرسل للمستخدم رقم 1 (تأكد أنه موجود في الداتا بيز)
-    $receiverId = 1; 
-    $message = "مرحبا! هذه رسالة تجريبية من بوشر.";
+// صفحة التجربة
+Route::get('/test-jwt', function () {
+    // 1. نجيب يوزر للتجربة
+    $user = User::firstOrCreate(
+        ['email' => 'jwt@test.com'],
+        ['name' => 'JWT User', 'password' => bcrypt('123456')]
+    );
 
-    // إطلاق الحدث
-    SendMessage::dispatch($message, $receiverId);
+    // 2. نطلع توكن حقيقي (حسب مكتبتك)
+    $token = auth('api')->login($user);
 
-    return "تم إرسال الرسالة للمستخدم رقم " . $receiverId;
+    // 3. نرجع صفحة فيها التوكن جاهز
+    return view('jwt_test_view', ['token' => $token, 'id' => $user->id]);
 });
-Route::get('/', function () {
-    return view('welcome');
+
+// رابط إرسال الرسالة
+Route::get('/send-jwt-msg/{id}', function ($id) {
+    // إرسال مباشر للآيدي المكتوب في الرابط
+    \App\Events\SendMessage::dispatch("تجربة رسالة للآيدي " . $id, $id);
+    return "تم الإرسال للمستخدم رقم: " . $id;
 });
 
 /* use App\Http\Controllers\LeaveRequestController;
