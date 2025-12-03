@@ -101,4 +101,5 @@ public function getJWTCustomClaims()
     {
         return $this->hasOne(Branch::class, 'manager_id');
     }
+    
 }
