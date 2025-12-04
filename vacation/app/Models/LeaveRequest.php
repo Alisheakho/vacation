@@ -22,13 +22,13 @@ class LeaveRequest extends Model
     ];
 
     
-    protected $casts = [
+/*     protected $casts = [
         'start_date' => 'date',
         'end_date'   => 'date',
         'escalated'  => 'boolean',
         'leave_type' => LeaveType::class,
         'status'     => LeaveStatus::class,
-    ];
+    ]; */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

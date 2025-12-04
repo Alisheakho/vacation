@@ -25,6 +25,7 @@ Route::group(['middleware'=>['permission:leave.manage'],'prefix' => 'admin'],fun
 }); 
 /////////////////////////////////////////////////////////////////////////////////
 
+    Route::post('register', [AuthController::class,'register']);
 
 
 
@@ -33,8 +34,11 @@ Route::group(['middleware'=>['permission:leave.manage'],'prefix' => 'admin'],fun
 
 
 
+use App\Http\Controllers\Api\LeaveRequestController;
 
-
+Route::middleware('auth:api')->group(function () {
+    Route::post('/leaves', [LeaveRequestController::class, 'store']);
+});
 
 
 

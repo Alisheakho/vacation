@@ -6,16 +6,13 @@ use App\Events\SendMessage; // تأكد ان اسم ملف الايفنت صح S
 
 // صفحة التجربة
 Route::get('/test-jwt', function () {
-    // 1. نجيب يوزر للتجربة
-    $user = User::firstOrCreate(
-        ['email' => 'jwt@test.com'],
-        ['name' => 'JWT User', 'password' => bcrypt('123456')]
-    );
-
-    // 2. نطلع توكن حقيقي (حسب مكتبتك)
+    // ضع هنا إيميل المدير الذي أنشأته في Postman
+    $user = \App\Models\User::where('email', 'ali33@example.com')->firstOrFail();
+    
+    // تسجيل دخول وإعطاء توكن
     $token = auth('api')->login($user);
-
-    // 3. نرجع صفحة فيها التوكن جاهز
+    
+    // فتح الصفحة
     return view('jwt_test_view', ['token' => $token, 'id' => $user->id]);
 });
 
