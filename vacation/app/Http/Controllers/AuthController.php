@@ -121,23 +121,14 @@ class AuthController extends Controller
 
 
        if(1==1){
- return response()->json([
+return response()->json([
+    'status' => 200,
+    'token' => $token,
     'user' => [
-
+        'id' => $user->id,        // 👈👈👈 هذا هو السطر الناقص والمهم جداً
         'name' => $user->name,
         'email' => $user->email,
- 
     ],
-/*     $user->role =>[
-     'gander' =>  $additionalData->gander,
-     'phoneNumber' => $additionalData->phoneNumber,
-     'region' => $additionalData->region->name,
-     'is_banned' => $additionalData->is_banned,
-     'specialization'=>$additionalData->specialization->name,
-    ], */
-    'token' => $token,
-    'status'=>200
-
 ]);
        }
 else
