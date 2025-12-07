@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'home.dart';
 
@@ -10,6 +11,9 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
+  final Color darkColor = const Color(0xFF1B5E55);
+  final Color lightColor = const Color(0xFF4DB6AC);
+
   late TextEditingController _idController;
   late TextEditingController _passwordController;
   bool _obscurePassword = true;
@@ -30,152 +34,126 @@ class _SignInPageState extends State<SignInPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.topRight,
-            colors: [Color(0xFF06332E), Color(0xFF054239)],
+    return Scaffold(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomCenter,
+              colors: [const Color(0xFF12423C), const Color(0xFF0E322D)],
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(height: 34),
-            // Logo Section
-            SvgPicture.asset(
-              'assets/images/logo.ai.svg',
-              width: 150,
-              height: 150,
-            ),
-            SizedBox(height: 8),
-            Text(
-              'ادارة مكافحة المخدرات',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'في سوريا',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 30),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 60),
+              Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    child: SvgPicture.asset(
+                      'assets/images/logo.ai.svg',
+                      width: 135,
+                      height: 135,
+                    ),
                   ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(30.0),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'ادارة مكافحة المخدرات',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Text(
+                    ' وزارة الداخلية',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 20,
+                        offset: Offset(0, -5),
+                      ),
+                    ],
+                  ),
                   child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 40,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        SizedBox(height: 20),
-                        // ID Input
-                        Text(
-                          'الرقم ذاتي',
+                        const Text(
+                          'تسجيل الدخول',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
                         ),
-                        SizedBox(height: 8),
-                        TextField(
-                          controller: _idController,
-                          textDirection: TextDirection.rtl,
-                          decoration: InputDecoration(
-                            hintText: 'ادخل الرقم الذتي',
-                            hintTextDirection: TextDirection.rtl,
-                            prefixIcon: Icon(Icons.badge_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Color(0xFF054239),
+                        const SizedBox(height: 8),
+                        Text(
+                          'يرجى ادخال بياناتك للمتابعة',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 30),
 
-                                width: 2,
-                              ),
-                            ),
-                          ),
+                        _buildLabel('الرقم الذاتي'),
+                        const SizedBox(height: 8),
+                        _buildTextField(
+                          controller: _idController,
+                          hint: 'ادخل الرقم الذاتي',
+                          icon: Icons.badge_outlined,
                         ),
-                        SizedBox(height: 20),
-                        // Password Input
-                        Text(
-                          'كلمة المرور',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        TextField(
+
+                        const SizedBox(height: 20),
+
+                        _buildLabel('كلمة المرور'),
+                        const SizedBox(height: 8),
+                        _buildTextField(
                           controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          textDirection: TextDirection.rtl,
-                          decoration: InputDecoration(
-                            hintText: '••••••••',
-                            hintTextDirection: TextDirection.rtl,
-                            prefixIcon: Icon(Icons.lock_outlined),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Color(0xFF054239).withOpacity(0.8),
-                                width: 2,
-                              ),
-                            ),
-                          ),
+                          hint: '••••••••',
+                          icon: Icons.lock_outline_rounded,
+                          isPassword: true,
                         ),
-                        SizedBox(height: 30),
-                        // Button
+
+                        const SizedBox(height: 24),
+
+                        // Login Button
                         SizedBox(
                           width: double.infinity,
-                          height: 50,
+                          height: 55,
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.of(context).pushReplacement(
@@ -185,18 +163,31 @@ class _SignInPageState extends State<SignInPage> {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF054239),
+                              backgroundColor: darkColor,
+                              foregroundColor: Colors.white,
+                              elevation: 2,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                               ),
+                              shadowColor: darkColor.withOpacity(0.4),
                             ),
-                            child: Text(
+                            child: const Text(
                               'تسجيل الدخول',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
                               ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+                        Center(
+                          child: Text(
+                            'نسيت كلمة المرور؟ تواصل مع الدعم الفني',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 12,
                             ),
                           ),
                         ),
@@ -205,8 +196,72 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: isPassword ? _obscurePassword : false,
+      textDirection: TextDirection.rtl,
+      style: const TextStyle(fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.grey[50],
+        hintText: hint,
+        hintTextDirection: TextDirection.rtl,
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 18,
+          horizontal: 16,
+        ),
+        prefixIcon: Icon(icon, color: Colors.grey[600]),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: Colors.grey[600],
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              )
+            : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey[200]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: darkColor, width: 1.5),
         ),
       ),
     );

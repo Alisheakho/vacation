@@ -9,7 +9,7 @@ class LeaveHistoryPage extends StatefulWidget {
 
 class _LeaveHistoryPageState extends State<LeaveHistoryPage> {
   // colors
-  final Color darkColor = const Color(0xFF06332E);
+  final Color darkColor = const Color(0xFF1B5E55);
   final Color background = const Color(0xFFF5F7FA);
 
   // Dummy Data: List of Leave Requests

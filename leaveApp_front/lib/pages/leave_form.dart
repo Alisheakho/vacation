@@ -10,7 +10,7 @@ class AddLeavePage extends StatefulWidget {
 
 class _AddLeavePageState extends State<AddLeavePage> {
   // Colors
-  final Color darkColor = const Color(0xFF06332E);
+  final Color darkColor = const Color(0xFF1B5E55);
   final Color background = const Color(0xFFF5F7FA);
 
   String? _selectedLeaveType;

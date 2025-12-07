@@ -12,7 +12,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       locale: const Locale('ar'),
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        fontFamily: 'Cairo',
+        primaryColor: const Color(0xFF1B5E55),
+        useMaterial3: true,
+      ),
       home: const SignInPage(),
     );
   }
