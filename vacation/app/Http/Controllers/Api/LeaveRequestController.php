@@ -7,10 +7,11 @@ use App\Models\LeaveRequest;
 use App\Events\NewLeaveRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use App\Http\Controllers\Api\DeviceTokenController;
+use App\Services\FcmService;
 class LeaveRequestController extends Controller
 {
-    public function store(Request $request)
+    public function store(Request $request, FcmService $fcm)
     {
         // 1. التحقق من البيانات (Validation)
         $validated = $request->validate([
@@ -33,16 +34,24 @@ class LeaveRequestController extends Controller
             'notes' => $request->notes,
             'status' => 'under_review'
         ]);
+$token = 'eJbLewJ0RLq38Za9aNIkiu:APA91bETPWXDltGV0kSamoeIFBkv5-bfjwgZEEQbXV_952cWYkxJaI36nTUdyZDAoohG7d7AQy4zsLL-XYjwK-lq3_k1XSJNA8Eg321eWgoexeY6oytPn90
+'; // بدون \n لو تقدر
 
-        // 3. تحديد المدير الذي سيستلم الإشعار
-        // (للتجربة سنرسل للمستخدم رقم 1، يمكنك تغييرها لاحقاً ليكون مدير الفرع)
         $managerId = 3; 
 
         // 4. إطلاق الحدث (Real-Time)
         NewLeaveRequest::dispatch($leaveRequest, $managerId);
 
         return response()->json([
-            'message' => 'تم تقديم الطلب بنجاح!',
+            $fcm->sendToTokens(
+        [$token],
+        'Test from Laravel HTTP v1',
+        'هالرسالة جاية من Laravel → FCM v1 😎',
+        ['screen' => 'home'] // انتبه: map (فيها key => value)
+        // 3. تحديد المدير الذي سيستلم الإشعار
+            ),
+            'message' => 'تم تق        // (للتجربة سنرسل للمستخدم رقم 1، يمكنك تغييرها لاحقاً ليكون مدير الفرع)
+ديم الطلب بنجاح!',
             'data' => $leaveRequest
         ]);
     }
