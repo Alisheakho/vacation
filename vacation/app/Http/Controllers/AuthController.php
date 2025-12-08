@@ -102,57 +102,66 @@ class AuthController extends Controller
     }
 }
 
-   public function login(Request $request)
-   {
-    try{
-       $validateData = $request->validate([
-           'email' => 'required|string|email|max:255',
-           'password' => 'required|string|min:6',
-       ]);
+public function login(Request $request)
+{
+    try {
+        $validateData = $request->validate([
+            'email'    => 'required|string|email|max:255',
+            'password' => 'required|string|min:6',
+        ]);
 
-       $user = User::where('email', $validateData['email'])->first();
+        $user = User::where('email', $validateData['email'])->first();
 
-       if (!$user || !Hash::check($validateData['password'], $user->password)) {
-           return response()->json(['error' => 'Invalid credentials'], 401);
-       }
+        if (!$user || !Hash::check($validateData['password'], $user->password)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Invalid credentials',
+            ], 401);
+        }
 
+        // إنشاء JWT Token
+        $token = JWTAuth::fromUser($user);
 
-       $token = JWTAuth::fromUser($user);
-
-
-       if(1==1){
-return response()->json([
-    'status' => 200,
-    'token' => $token,
-    'user' => [
-        'id' => $user->id,        // 👈👈👈 هذا هو السطر الناقص والمهم جداً
-        'name' => $user->name,
-        'email' => $user->email,
-    ],
-]);
-       }
-else
-return $this->getStudentDataForUi($user, $token);
-    }
-    catch (\Illuminate\Validation\ValidationException $e) {
+        // 👉 الشكل النهائي المتوافق مع Flutter
         return response()->json([
-            'status' => 422,
+            'status'  => true,
+            'message' => 'Login successful',
+            'data'    => [
+                'token' => $token,
+                'user'  => [
+                    'id'    => $user->id,
+                    'name'  => $user->name,
+                    'email' => $user->email,
+                ],
+            ],
+        ], 200);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+
+        return response()->json([
+            'status'  => false,
             'message' => 'Validation error',
-            'errors' => $e->errors(),
+            'errors'  => $e->errors(),
         ], 422);
-    } catch (\Illuminate\Database\QueryException $e) {
-        return response()->json([
-            'status' => 500,
-            'message' => 'Database error occurred: ' . $e->getMessage(),
-        ], 500);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 500,
-            'message' => 'An unexpected error occurred: ' . $e->getMessage(),
-        ], 500);
-    }
 
-   }
+    } catch (\Illuminate\Database\QueryException $e) {
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'Database error occurred',
+            'error'   => $e->getMessage(),
+        ], 500);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'Unexpected error occurred',
+            'error'   => $e->getMessage(),
+        ], 500);
+
+    }
+}
 
    public function me()
    {
