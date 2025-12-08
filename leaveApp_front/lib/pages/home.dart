@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:leave_app/pages/leave_form.dart';
 import 'package:leave_app/pages/leave_history.dart';
+import 'package:leave_app/pages/profile.dart';
+import 'package:leave_app/pages/notifications.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,93 +14,34 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
-  // colors | الالوان الاساسية الي عم نستخدمها بالتطبيق
-  final Color darkColor = const Color(0xFF1B5E55); // Dark Teal
-  final Color lightColor = const Color(0xFF4DB6AC); // Lighter Teal
-  final Color background = const Color(0xFFF5F7FA); // Light Grey/Blue
+  void _switchTab(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  final Color darkColor = const Color(0xFF1B5E55);
+
+  // --- قائمة الصفحات ---
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      DashboardTab(onTabChange: _switchTab),
+      const LeaveHistoryPage(),
+      const ProfilePage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      // Direction Fix
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: background,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 10),
-                // HEADER
-                _buildHeader(),
+        body: IndexedStack(index: _selectedIndex, children: _pages),
 
-                const SizedBox(height: 25),
-
-                // 2. BALANCE CARD
-                _buildBalanceCard(),
-
-                const SizedBox(height: 30),
-
-                // 3. ACTIONS
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    "الخدمات ",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                _buildActionGrid(),
-
-                const SizedBox(height: 30),
-
-                // 4. RECENT
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "آخر النشاطات",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const LeaveHistoryPage(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          "عرض الكل",
-                          style: TextStyle(color: darkColor),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _buildRecentActivityItem(
-                  "إجازة سنوية",
-                  "قيد المراجعة",
-                  "2025/--/--",
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Nav
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -113,19 +56,9 @@ class _HomePageState extends State<HomePage> {
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: (index) {
-              setState(() => _selectedIndex = index);
-              if (index == 0) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                );
-              } else if (index == 1) {
-                _selectedIndex = 0;
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const LeaveHistoryPage(),
-                  ),
-                );
-              }
+              setState(() {
+                _selectedIndex = index;
+              });
             },
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.white,
@@ -153,8 +86,87 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
 
-  Widget _buildHeader() {
+class DashboardTab extends StatelessWidget {
+  const DashboardTab({super.key, required this.onTabChange});
+  final Function(int) onTabChange;
+
+  final Color darkColor = const Color(0xFF1B5E55);
+  final Color background = const Color(0xFFF5F7FA);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+              _buildHeader(context),
+              const SizedBox(height: 25),
+              _buildBalanceCard(context),
+              const SizedBox(height: 30),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  "الخدمات ",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              _buildActionGrid(context),
+
+              const SizedBox(height: 30),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "آخر النشاطات",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Optional: Navigate to history tab via logic or push
+                        onTabChange(1);
+                      },
+                      child: Text(
+                        "عرض الكل",
+                        style: TextStyle(color: darkColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildRecentActivityItem(
+                "إجازة سنوية",
+                "قيد المراجعة",
+                "2025/--/--",
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       child: Row(
@@ -185,7 +197,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ' فرع الادارة في دمشق ',
+                    ' الادارة العامة ',
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const Text(
@@ -200,27 +212,39 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          InkWell(
+            onTap: () {
+              // Now 'context' is available here!
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsPage(),
                 ),
-              ],
+              );
+            },
+            borderRadius: BorderRadius.circular(50),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(Icons.notifications_outlined, color: darkColor),
             ),
-            child: Icon(Icons.notifications_outlined, color: darkColor),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBalanceCard() {
+  Widget _buildBalanceCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
@@ -243,7 +267,6 @@ class _HomePageState extends State<HomePage> {
         ),
         child: Stack(
           children: [
-            // Background circle
             Positioned(
               top: -20,
               left: -20,
@@ -268,7 +291,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            // Content
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -339,26 +361,35 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildActionGrid() {
+  Widget _buildActionGrid(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
           Expanded(
             child: _buildActionCard(
+              context,
               title: 'طلب جديد',
               icon: Icons.add_circle_outline,
               color: const Color(0xFF2ABF7E),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddLeavePage()),
+                );
+              },
             ),
           ),
           const SizedBox(width: 15),
           Expanded(
             child: _buildActionCard(
+              context,
               title: 'السجل',
               icon: Icons.history,
               color: const Color(0xFFF9A825),
-              onTap: () {},
+              onTap: () {
+                onTabChange(1);
+              },
             ),
           ),
         ],
@@ -366,7 +397,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildActionCard({
+  Widget _buildActionCard(
+    BuildContext context, {
     required String title,
     required IconData icon,
     required Color color,
@@ -388,21 +420,7 @@ class _HomePageState extends State<HomePage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            if (title == 'طلب جديد') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddLeavePage()),
-              );
-            } else {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const LeaveHistoryPage(),
-                ),
-              );
-            }
-          },
-
+          onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

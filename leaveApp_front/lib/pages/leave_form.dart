@@ -338,11 +338,26 @@ class _AddLeavePageState extends State<AddLeavePage> {
 
     return GestureDetector(
       onTap: () async {
+        DateTime firstDate;
+        DateTime initialDate;
+        DateTime lastDate = DateTime(2026, 06, 07);
+
+        if (isStart) {
+          firstDate = DateTime.now();
+          initialDate = _startDate ?? DateTime.now();
+        } else {
+          firstDate = _startDate ?? DateTime.now();
+          initialDate =
+              _endDate ??
+              (_startDate != null
+                  ? _startDate!.add(const Duration(days: 1))
+                  : DateTime.now().add(const Duration(days: 1)));
+        }
         final DateTime? picked = await showDatePicker(
           context: context,
-          initialDate: DateTime.now(),
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now(),
+          initialDate: initialDate,
+          firstDate: firstDate,
+          lastDate: lastDate,
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(

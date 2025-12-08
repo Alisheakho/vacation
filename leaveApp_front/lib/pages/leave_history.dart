@@ -12,7 +12,6 @@ class _LeaveHistoryPageState extends State<LeaveHistoryPage> {
   final Color darkColor = const Color(0xFF1B5E55);
   final Color background = const Color(0xFFF5F7FA);
 
-  // Dummy Data: List of Leave Requests
   final List<Map<String, dynamic>> _leaves = [
     // {
     //   'type': 'إجازة سنوية',
@@ -54,10 +53,6 @@ class _LeaveHistoryPageState extends State<LeaveHistoryPage> {
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
-            onPressed: () => Navigator.pop(context),
           ),
         ),
         body: _leaves.isEmpty
@@ -227,7 +222,6 @@ class _LeaveHistoryPageState extends State<LeaveHistoryPage> {
                         ],
                       ),
 
-                      // --- Bottom Row: Reason (Only if exists) ---
                       if (leave['reason'] != null &&
                           leave['reason'].toString().trim().isNotEmpty) ...[
                         const SizedBox(height: 10),
