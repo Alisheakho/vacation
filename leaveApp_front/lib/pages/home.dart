@@ -143,7 +143,6 @@ class DashboardTab extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        // Optional: Navigate to history tab via logic or push
                         onTabChange(1);
                       },
                       child: Text(
@@ -214,7 +213,6 @@ class DashboardTab extends StatelessWidget {
           ),
           InkWell(
             onTap: () {
-              // Now 'context' is available here!
               Navigator.push(
                 context,
                 MaterialPageRoute(
