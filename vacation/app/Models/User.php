@@ -101,4 +101,11 @@ public function getJWTCustomClaims()
     {
         return $this->hasOne(Branch::class, 'manager_id');
     }
+    // app/Models/User.php
+
+public function deviceTokens()
+{
+    return $this->hasMany(\App\Models\DeviceToken::class);
+}
+
 }

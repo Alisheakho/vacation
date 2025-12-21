@@ -13,6 +13,10 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+'firebase' => [
+    'credentials' => env('FIREBASE_CREDENTIALS', null),
+    'project_id'  => env('FIREBASE_PROJECT_ID', null),
+],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),

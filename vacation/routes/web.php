@@ -1,9 +1,26 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-Route::get('/', function () {
-    return view('welcome');
+use App\Models\User;
+use App\Events\SendMessage; // تأكد ان اسم ملف الايفنت صح SendMessage
+
+// صفحة التجربة
+Route::get('/test-jwt', function () {
+    // ضع هنا إيميل المدير الذي أنشأته في Postman
+    $user = \App\Models\User::where('email', 'ali33@example.com')->firstOrFail();
+    
+    // تسجيل دخول وإعطاء توكن
+    $token = auth('api')->login($user);
+    
+    // فتح الصفحة
+    return view('jwt_test_view', ['token' => $token, 'id' => $user->id]);
+});
+
+// رابط إرسال الرسالة
+Route::get('/send-jwt-msg/{id}', function ($id) {
+    // إرسال مباشر للآيدي المكتوب في الرابط
+    \App\Events\SendMessage::dispatch("تجربة رسالة للآيدي " . $id, $id);
+    return "تم الإرسال للمستخدم رقم: " . $id;
 });
 
 /* use App\Http\Controllers\LeaveRequestController;
