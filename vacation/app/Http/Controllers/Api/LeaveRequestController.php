@@ -81,7 +81,7 @@ class LeaveRequestController extends Controller
 
     // FCM
     if (!empty($managerTokens)) {
-        $fcm->sendToTokens(
+        $fcm->sendToTokens(     
             $managerTokens,
             'طلب إجازة جديد 📝',
             'الموظف ' . $user->name . ' طلب إجازة لمدة ' . $daysCount . ' أيام.',
