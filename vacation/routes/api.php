@@ -90,3 +90,5 @@ Route::get('/test-fcm', function (FcmService $fcm) {
 Route::get('/debug-path', function () {
     return base_path(config('services.firebase.credentials'));
 });
+Route::get('/notifications', [LeaveRequestController::class, 'getNotifications']);
+Route::post('/notifications/clear', [LeaveRequestController::class,'clearNotifications']);
