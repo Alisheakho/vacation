@@ -7,8 +7,8 @@ use App\Http\Controllers\AuthController;
 
 use App\Http\Controllers\BranchController;
 
-
-
+/* http://127.0.0.1:8000/api/login
+http://127.0.0.1:8000/api/admin/Auth/register */
   Route::post('login', [AuthController::class,'login']); 
 
  Route::middleware(['check.token',/*  'role:admin' */])->group(function () {
