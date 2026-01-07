@@ -19,7 +19,7 @@ class AuthController extends Controller
         // -----------------------------
      $validated = $request->validate([
     'name'     => 'required|string|max:255',
-    'email'    => 'required|email|unique:users,email',
+    'email' => 'required|string|max:255',
     'password' => 'required|confirmed',
     'role'     => 'required|in:employee,branch_manager,hr,dept_manager',
 
@@ -106,7 +106,7 @@ public function login(Request $request)
 {
     try {
         $validateData = $request->validate([
-            'email'    => 'required|string|email|max:255',
+            'email'    => 'required|string|max:255',
             'password' => 'required|string|min:6',
         ]);
 
