@@ -13,87 +13,91 @@ class AuthController extends Controller
  public function register(Request $request)
 {
     try {
-
         // -----------------------------
         // 1) Validation
         // -----------------------------
-     $validated = $request->validate([
-    'name'     => 'required|string|max:255',
-    'email'    => 'required|email|unique:users,email',
-    'password' => 'required|confirmed',
-    'role'     => 'required|in:employee,branch_manager,hr,dept_manager',
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|confirmed',
+            'role'     => 'required|in:employee,branch_manager,hr,dept_manager',
 
-    // موظف → لازم يرسل branch_id
-    'branch_id'     => 'required_if:role,employee|nullable|exists:branches,id',
+            // أ) الموظف: ينضم لفرع موجود
+            'branch_id' => 'required_if:role,employee|nullable|exists:branches,id',
 
-    // رئيس فرع و HR → لازم يرسل branch.name
-    'branch.name'   => 'required_if:role,branch_manager,hr|string|max:255',
-    'branch.code'   => 'nullable|string|max:10',
+            // ب) المدير ورئيس الفرع: اسم الفرع الجديد
+            'branch.name' => 'required_if:role,branch_manager,hr,dept_manager|string|max:255',
+            'branch.code' => 'nullable|string|max:10',
 
-    // مدير إدارة → ممنوع يرسل branch
-    'branch'        => 'prohibited_if:role,dept_manager',
-]);
-
+            // ج) رئيس الفرع: رقم الفرع الأب (عشان نربط الفرع الجديد تحته، وعشان نحط رئيس الفرع فيه)
+            'parent_branch_id' => 'required_if:role,branch_manager|nullable|exists:branches,id',
+        ]);
 
         // -----------------------------
-        // 2) Run inside a transaction
+        // 2) Transaction
         // -----------------------------
         return \DB::transaction(function () use ($validated) {
 
-            // 3) أنشئ المستخدم
+            // 3) إنشاء المستخدم
             $user = \App\Models\User::create([
-                'name'     => $validated['name'],
-                'email'    => $validated['email'],
-                'password' => bcrypt($validated['password']),
+                'name'           => $validated['name'],
+                'email'          => $validated['email'],
+                'password'       => bcrypt($validated['password']),
                 'annual_balance' => 30,
             ]);
 
-            // 4) سلوك بحسب الرول
-          if ($validated['role'] === 'employee') {
+            // 4) المعالجة حسب الرتبة
+            if ($validated['role'] === 'dept_manager') {
 
-    // موظف → لازم يربط بفرع
-    $user->branch_id = $validated['branch_id'];
-    $user->save();
+                // --- مدير الإدارة ---
+                // 1. ينشئ الفرع الرئيسي (بدون أب)
+                $branch = \App\Models\Branch::create([
+                    'name'       => $validated['branch']['name'],
+                    'code'       => $validated['branch']['code'] ?? null,
+                    'parent_id'  => null, 
+                    'manager_id' => $user->id, // هو يدير هذا الفرع
+                ]);
 
-} elseif (in_array($validated['role'], ['branch_manager', 'hr'])) {
+                // 2. (تصحيح الغلطة الأولى): مدير الإدارة يكون بداخل فرعه
+                $user->branch_id = $branch->id;
+                $user->save();
 
-    // مدير فرع أو HR → إنشاء فرع جديد
-    $branch = Branch::firstOrCreate(
-        ['name' => $validated['branch']['name']],
-        ['code' => $validated['branch']['code'] ?? null]
-    );
+            } elseif (in_array($validated['role'], ['branch_manager', 'hr'])) {
 
-    // إذا كان الفرع جديد → خليه يصير المدير
-    if ($branch->wasRecentlyCreated) {
-        $branch->manager_id = $user->id;
-        $branch->save();
-    }
+                // --- رئيس الفرع ---
+                // 1. ينشئ الفرع الفرعي (ويربطه بالفرع الأب)
+                $newBranch = \App\Models\Branch::create([
+                    'name'       => $validated['branch']['name'],
+                    'code'       => $validated['branch']['code'] ?? null,
+                    'parent_id'  => $validated['parent_branch_id'], // تابع للإدارة
+                    'manager_id' => $user->id, // هو يدير الفرع الجديد
+                ]);
 
-    // اربط اليوزر بالفرع
-    $user->branch_id = $branch->id;
-    $user->save();
+                // 2. (تصحيح الغلطة الثانية):
+                // رئيس الفرع لا نضعه في الفرع الجديد، بل نضعه في الفرع الأب (الإدارة)
+                // حسب طلبك: "بدي يتبع لمدير الإدارة"
+                $user->branch_id = $validated['parent_branch_id']; 
+                $user->save();
 
-} elseif ($validated['role'] === 'dept_manager') {
+            } elseif ($validated['role'] === 'employee') {
 
-    // مدير إدارة → لا فرع جديد ولا فرع موجود
-    // يبقى branch_id = null
-}
+                // --- الموظف ---
+                // ينضم للفرع المحدد
+                $user->branch_id = $validated['branch_id'];
+                $user->save();
+            }
 
-
-            // 5) Assign role
+            // 5) Assign Role
             $user->assignRole($validated['role']);
 
-            // 6) Final response
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully.',
-                'data' => $user
+                'data'    => $user->load('branch')
             ], 201);
-
         });
 
     } catch (\Exception $e) {
-
         return response()->json([
             'success' => false,
             'message' => 'Error occurred',
@@ -101,7 +105,6 @@ class AuthController extends Controller
         ], 500);
     }
 }
-
 public function login(Request $request)
 {
     try {

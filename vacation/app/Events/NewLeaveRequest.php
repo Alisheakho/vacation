@@ -3,7 +3,6 @@
 namespace App\Events;
 
 use App\Models\LeaveRequest;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -15,39 +14,45 @@ class NewLeaveRequest implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $leaveRequest;
-    public $managerId;
+    public $targetUserId; // غيرنا الاسم ليكون عام (ممكن مدير وممكن موظف)
+    public $eventType;    // نوع الحدث: 'created' أو 'updated'
 
-    // نستلم طلب الإجازة كاملاً + آيدي المدير الذي سيستلم الإشعار
-    public function __construct(LeaveRequest $leaveRequest, $managerId)
+    // بنمرر الطلب + الآيدي المستهدف + نوع الحدث (افتراضياً created)
+    public function __construct(LeaveRequest $leaveRequest, $targetUserId, $eventType = 'created')
     {
         $this->leaveRequest = $leaveRequest;
-        $this->managerId = $managerId;
+        $this->targetUserId = $targetUserId;
+        $this->eventType = $eventType;
     }
 
     public function broadcastOn(): array
     {
-        // نرسل لقناة المدير (مثلاً chat.1)
+        // نرسل للقناة بناءً على الآيدي المستهدف (سواء مدير أو موظف)
         return [
-            new PrivateChannel('chat.' . $this->managerId),
+            new PrivateChannel('chat.' . $this->targetUserId),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'leave.created';
+        // 👇 هنا الذكاء: بنغير الاسم حسب النوع
+        return $this->eventType === 'created' ? 'leave.created' : 'leave.updated';
     }
 
-    // هنا نحدد البيانات التي ستظهر في الجافاسكربت (من جدولك بالضبط)
     public function broadcastWith()
     {
+        // تحديد الرسالة حسب الحالة
+        $msg = $this->eventType === 'created' 
+            ? "طلب إجازة جديد ({$this->leaveRequest->leave_type})"
+            : "تم تحديث حالة طلبك إلى: {$this->leaveRequest->status}";
+
         return [
-            'id' => $this->leaveRequest->id,
-            'employee' => $this->leaveRequest->user->name, // اسم الموظف
-            'type' => $this->leaveRequest->leave_type,     // نوع الإجازة
-            'start_date' => $this->leaveRequest->start_date,
-            'days' => $this->leaveRequest->days,
-            'status' => $this->leaveRequest->status,
-            'message' => "طلب إجازة جديد (" . $this->leaveRequest->leave_type . ")"
+            'id'         => $this->leaveRequest->id,
+            'status'     => $this->leaveRequest->status,
+            'message'    => $msg,
+            // رجعنا المودل كامل عشان التحديث
+            'leaveRequest' => $this->leaveRequest, 
+            'type'       => $this->eventType, // مفيد لفلتر يعرف شو صار
         ];
     }
 }

@@ -107,31 +107,40 @@ class LeaveRequestController extends Controller
         }
     }
 
-    public function getNotifications()
+   public function getNotifications()
     {
         $user = Auth::user();
-        
-        $managedBranchIds = \App\Models\Branch::where('manager_id', $user->id)->pluck('id');
-        
-        if ($managedBranchIds->isEmpty()) {
-            return response()->json([]);
-        }
 
-        // جلب الطلبات (الداتا الكاملة)
-        $requests = \App\Models\LeaveRequest::whereIn('branch_id', $managedBranchIds)
-            ->with('user') // 👈 ضروري عشان اسم الموظف يوصل لفلاتر
-            ->where('status', 'under_review')
+        // 1. جلب أرقام الفروع التي يديرها هذا المستخدم (إن وجد)
+        $managedBranchIds = \App\Models\Branch::where('manager_id', $user->id)->pluck('id');
+
+        // 2. الاستعلام الذكي (للجهتين)
+        $requests = \App\Models\LeaveRequest::with('user')
+            ->where(function ($query) use ($user, $managedBranchIds) {
+                
+                // أ: جيب الطلبات اللي أنا قدمتها (كموظف)
+                $query->where('user_id', $user->id);
+
+                // ب: أو.. إذا كنت مدير، جيب الطلبات اللي جاية للفروع تبعي (ما عدا طلباتي الشخصية عشان ما وافق على نفسي، أو اتركها عادي)
+                if ($managedBranchIds->isNotEmpty()) {
+                    // نستخدم orWhereIn عشان ندمج الحالتين
+                    $query->orWhereIn('branch_id', $managedBranchIds);
+                }
+            })
+            // ❌ حذفنا شرط under_review عشان يظهر المقبول والمرفوض
+            // ->where('status', 'under_review') 
+            
+            // 3. التحقق من تاريخ مسح الإشعارات
             ->where(function($query) use ($user) {
                 if ($user->last_notification_clear_date) {
                     $query->where('created_at', '>', $user->last_notification_clear_date);
                 }
             })
+            // 4. ترتيب تنازلي (الأحدث فوق)
             ->orderBy('created_at', 'desc')
-            ->take(20)
+            ->take(50) // جلب آخر 50 إشعار
             ->get();
-            
-        // 👇👇👇 التغيير هنا: رجعنا الداتا كاملة بدون map 👇👇👇
-        // هيك فلاتر بيقدر يحولها لـ LeaveRequest ويطلع كل التفاصيل
+
         return response()->json($requests);
     }
 
@@ -141,5 +150,79 @@ class LeaveRequestController extends Controller
         $user->last_notification_clear_date = now();
         $user->save();
         return response()->json(['message' => 'History cleared successfully']);
+    }
+    ////////////////////////////////////
+    // أضف هذا الـ use في أعلى الملف
+    // use App\Events\LeaveRequestStatusUpdated;
+
+   public function updateStatus(Request $request, $id, FcmService $fcm)
+    {
+        try {
+            // 1. التحقق من المدخلات
+            $request->validate([
+                'status'     => 'required|in:approved,rejected', 
+                'admin_note' => 'nullable|string', 
+            ]);
+
+            $manager = Auth::user();
+
+            // 2. جلب الطلب
+            $leaveRequest = LeaveRequest::with('user')->find($id);
+
+            if (!$leaveRequest) {
+                return response()->json(['message' => 'الطلب غير موجود'], 404);
+            }
+
+            // 3. التحقق من الصلاحية
+            $branch = \App\Models\Branch::find($leaveRequest->branch_id);
+            
+            if (!$branch || $branch->manager_id !== $manager->id) {
+                return response()->json(['message' => 'عذراً، ليس لديك صلاحية للرد على هذا الطلب'], 403);
+            }
+
+            // 4. تحديث حالة الطلب
+            $leaveRequest->status = $request->status;
+            $leaveRequest->admin_notes = $request->admin_note;
+            $leaveRequest->save();
+
+            // 5. الإشعارات 🔔
+            try {
+                // ✅ التعديل هنا: استخدام نفس الايفنت مع تحديد النوع updated
+                // نرسل الطلب + آيدي الموظف + نوع الحدث
+                \App\Events\NewLeaveRequest::dispatch($leaveRequest, $leaveRequest->user_id, 'updated');
+
+                // ب: FCM
+                $employeeTokens = \App\Models\DeviceToken::where('user_id', $leaveRequest->user_id)
+                    ->pluck('token')
+                    ->toArray();
+
+                if (!empty($employeeTokens)) {
+                    $statusText = $request->status == 'approved' ? 'الموافقة على' : 'رفض';
+                    $emoji = $request->status == 'approved' ? '✅' : '❌';
+                    
+                    $fcm->sendToTokens(
+                        $employeeTokens,
+                        "تم تحديث حالة طلبك $emoji",
+                        "قام المدير بـ $statusText طلب الإجازة الخاص بك.",
+                        [
+                            'screen' => 'request_details',
+                            'request_id' => $leaveRequest->id
+                        ]
+                    );
+                }
+            } catch (\Exception $e) {
+                // Ignored
+            }
+
+            return response()->json([
+                'message' => 'تم تحديث حالة الطلب بنجاح',
+                'data'    => $leaveRequest
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'حدث خطأ', 'error' => $e->getMessage()], 500);
+        }
     }
 }

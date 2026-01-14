@@ -38,7 +38,7 @@ return new class extends Migration {
             ])->default('under_review');
 
             $table->boolean('escalated')->default(false);
-
+$table->text('admin_notes')->nullable();
             $table->text('notes')->nullable();
 
             $table->timestamps();

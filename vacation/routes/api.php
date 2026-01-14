@@ -38,6 +38,8 @@ use App\Http\Controllers\Api\LeaveRequestController;
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/leaves', [LeaveRequestController::class, 'store']);
+    Route::post('/leaves/{id}/status', [LeaveRequestController::class, 'updateStatus']);
+
 });
 
 

@@ -19,6 +19,7 @@ class LeaveRequest extends Model
         'status',
         'escalated',
         'notes',
+        'admin_notes',
     ];
 
     
