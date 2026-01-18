@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\EmployeeController;
 
 /* http://127.0.0.1:8000/api/login
 http://127.0.0.1:8000/api/admin/Auth/register */
@@ -58,6 +59,8 @@ use App\Services\FcmService;
 Route::middleware(['auth:api'])->group(function () {
     Route::post('/device-token', [DeviceTokenController::class, 'store']);
     Route::delete('/device-token', [DeviceTokenController::class, 'destroy']);
+    Route::apiResource('branches', BranchController::class);
+    Route::apiResource('employees', EmployeeController::class);
 
     // مثال: الإشعار يروح للمستخدم الحالي
     Route::post('/notify-me', function (Request $request, FcmService $fcm) {
