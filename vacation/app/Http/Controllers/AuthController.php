@@ -125,19 +125,16 @@ public function login(Request $request)
         // إنشاء JWT Token
         $token = JWTAuth::fromUser($user);
 $userRole = $user->getRoleNames()->first();
+$authData = [
+            'token' => $token,
+            'user'  => $user,
+            'role'  => $userRole,
+        ];
         // 👉 الشكل النهائي المتوافق مع Flutter
         return response()->json([
             'status'  => true,
             'message' => 'Login successful',
-            'data'    => [
-                'token' => $token,
-                'role'  => $userRole,
-                'user'  => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
-                    'email' => $user->email,
-                ],
-            ],
+       'data'    => new \App\Http\Resources\AuthResource($authData),
         ], 200);
 
     } catch (\Illuminate\Validation\ValidationException $e) {

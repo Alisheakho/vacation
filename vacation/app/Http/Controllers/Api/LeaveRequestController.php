@@ -7,9 +7,10 @@ use App\Models\LeaveRequest;
 use App\Events\NewLeaveRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Api\DeviceTokenController;
 use App\Services\FcmService;
 use Illuminate\Validation\ValidationException;
+// 👇 استيراد الريسورس
+use App\Http\Resources\LeaveRequestResource;
 
 class LeaveRequestController extends Controller
 {
@@ -42,7 +43,7 @@ class LeaveRequestController extends Controller
                 $start->addDay();
             }
 
-            // 3. جلب المدير
+            // 3. جلب المدير (لأغراض التنبيهات)
             $branch = \App\Models\Branch::find($user->branch_id);
             if (!$branch) {
                 throw new \Exception("الفرع غير موجود");
@@ -67,17 +68,19 @@ class LeaveRequestController extends Controller
                 'status'     => 'under_review'
             ]);
 
-            // 5. الإشعارات
+            // 5. الإشعارات وتجهيز الرد
             try {
-                // 👇👇 تعديل هام: تحميل بيانات اليوزر عشان الاسم يوصل بالبوشر 👇👇
-                $leaveRequest->load('user'); 
+                // 👇👇 هام جداً: تحميل العلاقات المتداخلة (User + Branch + Manager) 👇👇
+                // عشان الريسورس يشتغل صح ويرجع الفرع وجواته المدير
+                $leaveRequest->load(['user', 'branch.manager']); 
 
-                // Pusher (نبعث المودل كامل)
+                // Pusher
                 if ($managerId) {
+                    // نرسل الريسورس نفسه بالبوشر لتوحيد الداتا
                     NewLeaveRequest::dispatch($leaveRequest, $managerId);
                 }
 
-                // FCM (نبعث بيانات للعرض + المودل مخفي بالداتا)
+                // FCM
                 if (!empty($managerTokens)) {
                     $fcm->sendToTokens(
                         $managerTokens,
@@ -86,8 +89,6 @@ class LeaveRequestController extends Controller
                         [
                             'screen' => 'home',
                             'request_id' => $leaveRequest->id,
-                            // ممكن تبعت المودل هنا كـ سترينج لو حبيت
-                            // 'leave_request' => json_encode($leaveRequest) 
                         ]
                     );
                 }
@@ -97,7 +98,8 @@ class LeaveRequestController extends Controller
 
             return response()->json([
                 'message' => 'تم تقديم الطلب بنجاح',
-                'data'    => $leaveRequest
+                // 👇 استخدام الريسورس الجديد
+                'data'    => new LeaveRequestResource($leaveRequest)
             ]);
 
         } catch (ValidationException $e) {
@@ -107,41 +109,36 @@ class LeaveRequestController extends Controller
         }
     }
 
-   public function getNotifications()
+    public function getNotifications()
     {
         $user = Auth::user();
 
-        // 1. جلب أرقام الفروع التي يديرها هذا المستخدم (إن وجد)
+        // 1. جلب أرقام الفروع التي يديرها هذا المستخدم
         $managedBranchIds = \App\Models\Branch::where('manager_id', $user->id)->pluck('id');
 
-        // 2. الاستعلام الذكي (للجهتين)
-        $requests = \App\Models\LeaveRequest::with('user')
+        // 2. الاستعلام
+        // 👇👇 هام جداً: تحميل العلاقات (User + Branch + Manager) مع القائمة 👇👇
+        $requests = \App\Models\LeaveRequest::with(['user', 'branch.manager'])
             ->where(function ($query) use ($user, $managedBranchIds) {
                 
-                // أ: جيب الطلبات اللي أنا قدمتها (كموظف)
+                // أ: طلباتي
                 $query->where('user_id', $user->id);
 
-                // ب: أو.. إذا كنت مدير، جيب الطلبات اللي جاية للفروع تبعي (ما عدا طلباتي الشخصية عشان ما وافق على نفسي، أو اتركها عادي)
+                // ب: طلبات فروعي (للمدير)
                 if ($managedBranchIds->isNotEmpty()) {
-                    // نستخدم orWhereIn عشان ندمج الحالتين
                     $query->orWhereIn('branch_id', $managedBranchIds);
                 }
             })
-            // ❌ حذفنا شرط under_review عشان يظهر المقبول والمرفوض
-            // ->where('status', 'under_review') 
-            
-            // 3. التحقق من تاريخ مسح الإشعارات
             ->where(function($query) use ($user) {
                 if ($user->last_notification_clear_date) {
                     $query->where('created_at', '>', $user->last_notification_clear_date);
                 }
             })
-            // 4. ترتيب تنازلي (الأحدث فوق)
             ->orderBy('created_at', 'desc')
-            // جلب آخر 50 إشعار
             ->get();
 
-        return response()->json($requests);
+        // 👇 استخدام الكولكشن (للقوائم)
+        return response()->json(LeaveRequestResource::collection($requests));
     }
 
     public function clearNotifications()
@@ -151,14 +148,10 @@ class LeaveRequestController extends Controller
         $user->save();
         return response()->json(['message' => 'History cleared successfully']);
     }
-    ////////////////////////////////////
-    // أضف هذا الـ use في أعلى الملف
-    // use App\Events\LeaveRequestStatusUpdated;
 
-   public function updateStatus(Request $request, $id, FcmService $fcm)
+    public function updateStatus(Request $request, $id, FcmService $fcm)
     {
         try {
-            // 1. التحقق من المدخلات
             $request->validate([
                 'status'     => 'required|in:approved,rejected', 
                 'admin_note' => 'nullable|string', 
@@ -166,32 +159,28 @@ class LeaveRequestController extends Controller
 
             $manager = Auth::user();
 
-            // 2. جلب الطلب
-            $leaveRequest = LeaveRequest::with('user')->find($id);
+            // 👇 هام جداً: جلب الطلب مع العلاقات (User + Branch + Manager)
+            $leaveRequest = LeaveRequest::with(['user', 'branch.manager'])->find($id);
 
             if (!$leaveRequest) {
                 return response()->json(['message' => 'الطلب غير موجود'], 404);
             }
 
-            // 3. التحقق من الصلاحية
-            $branch = \App\Models\Branch::find($leaveRequest->branch_id);
-            
-            if (!$branch || $branch->manager_id !== $manager->id) {
+            // التحقق من الصلاحية (نتأكد من أن المدير هو مدير الفرع فعلاً)
+            // بما أننا جبنا العلاقة، ممكن نستخدم $leaveRequest->branch مباشرة
+            if (!$leaveRequest->branch || $leaveRequest->branch->manager_id !== $manager->id) {
                 return response()->json(['message' => 'عذراً، ليس لديك صلاحية للرد على هذا الطلب'], 403);
             }
 
-            // 4. تحديث حالة الطلب
+            // التحديث
             $leaveRequest->status = $request->status;
             $leaveRequest->admin_notes = $request->admin_note;
             $leaveRequest->save();
 
-            // 5. الإشعارات 🔔
+            // الإشعارات
             try {
-                // ✅ التعديل هنا: استخدام نفس الايفنت مع تحديد النوع updated
-                // نرسل الطلب + آيدي الموظف + نوع الحدث
                 \App\Events\NewLeaveRequest::dispatch($leaveRequest, $leaveRequest->user_id, 'updated');
 
-                // ب: FCM
                 $employeeTokens = \App\Models\DeviceToken::where('user_id', $leaveRequest->user_id)
                     ->pluck('token')
                     ->toArray();
@@ -216,7 +205,8 @@ class LeaveRequestController extends Controller
 
             return response()->json([
                 'message' => 'تم تحديث حالة الطلب بنجاح',
-                'data'    => $leaveRequest
+                // 👇 استخدام الريسورس
+                'data'    => new LeaveRequestResource($leaveRequest)
             ]);
 
         } catch (ValidationException $e) {
