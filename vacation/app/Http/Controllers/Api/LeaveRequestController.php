@@ -138,7 +138,7 @@ class LeaveRequestController extends Controller
             })
             // 4. ترتيب تنازلي (الأحدث فوق)
             ->orderBy('created_at', 'desc')
-            ->take(50) // جلب آخر 50 إشعار
+            // جلب آخر 50 إشعار
             ->get();
 
         return response()->json($requests);
