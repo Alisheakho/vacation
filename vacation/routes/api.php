@@ -94,3 +94,5 @@ Route::get('/debug-path', function () {
 });
 Route::get('/notifications', [LeaveRequestController::class, 'getNotifications']);
 Route::post('/notifications/clear', [LeaveRequestController::class,'clearNotifications']);
+Route::post('refreshToken', [AuthController::class, 'refreshToken']);
+ 
