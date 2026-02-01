@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash; 
+use App\Models\DeviceToken;
 class AuthController extends Controller
 {
 
@@ -170,23 +171,41 @@ $authData = [
    }
 
 
-   public function logout()
+  public function logout(Request $request)
 {
     try {
+        // 👇👇 1. طباعة التوكن الواصل للسيرفر في ملف اللوج
+        \Log::info('🚀 Logout Request Received');
+        \Log::info('📥 Token from App:', ['token' => $request->fcm_token]);
 
+        // 👇👇 2. استخدام filled بدلاً من has (أضمن)
+        if ($request->filled('fcm_token')) {
+            
+            // محاولة الحذف ومعرفة العدد
+            $deletedCount = DeviceToken::where('token', $request->fcm_token)->delete();
+            
+            \Log::info("🗑️ Deleted Rows: " . $deletedCount);
+
+            if ($deletedCount == 0) {
+                \Log::warning("⚠️ Token received but NOT found in Database! (Mismatch)");
+            }
+        } else {
+            \Log::error("❌ fcm_token is NULL or Missing!");
+        }
+
+        // 3. إبطال الـ JWT
         $token = JWTAuth::getToken();
-        JWTAuth::invalidate($token); // تعطيل التوكن لجعله غير صالح
+        JWTAuth::invalidate($token);
 
-        return response()->json(['message' => 'Successfully logged out','status'=>200], 200);
+        return response()->json(['message' => 'Successfully logged out', 'status' => 200], 200);
+
     } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
-
         return response()->json(['error' => 'Token is already invalid'], 401);
     } catch (\Exception $e) {
-
-        return response()->json(['error' => 'Could not log out, please try again.'], 500);
+        \Log::error("🔥 Logout Error: " . $e->getMessage()); // تسجيل الخطأ
+        return response()->json(['error' => 'Could not log out'], 500);
     }
 }
-
 /*    public function refresh()
    {
        return $this->respondWithToken(auth()->refresh());
