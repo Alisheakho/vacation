@@ -80,6 +80,10 @@ class FcmService
                     'title' => $title,
                     'body'  => $body,
                 ],
+                    'android' => [
+        'priority' => 'high',
+        'ttl' => '86400s', // 24 ساعة (غيّرها حسب حاجتك)
+    ],
             ];
 
             // إضافة الداتا (Data Payload) كـ Strings فقط
