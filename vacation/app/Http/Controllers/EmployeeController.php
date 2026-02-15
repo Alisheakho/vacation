@@ -8,63 +8,72 @@ use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends Controller
 {
+    // GET ALL
     public function index()
     {
         $employees = User::all();
-
-        $formatted = $employees->map(fn($user) => $this->formatUserForFlutter($user));
+        // add "0" for missing fields
+        $formatted = $employees->map(fn($u) => $this->formatUserForFlutter($u));
 
         return response()->json([
-            'status' => true,
-            'message' => 'Success',
+            'status' => true, 
+            'message' => 'Success', 
             'data' => $formatted
         ], 200);
     }
 
+    // CREATE
     public function store(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'firstName' => 'required',
-            'lastName' => 'required',
+            'firstName'      => 'required',
+            'lastName'       => 'required',
+            'email'          => 'required|email|unique:users',
+            'password'       => 'required|min:6',
+            'branch_id'      => 'required|numeric',
+            'annual_balance' => 'numeric',
         ]);
 
         $user = User::create([
-            'name' => $request->firstName . ' ' . $request->lastName, // Combine for DB
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name'           => $request->firstName . ' ' . $request->lastName,
+            'email'          => $request->email,
+            'password'       => Hash::make($request->password),
+            'branch_id'      => $request->branch_id,
+            'annual_balance' => $request->annual_balance ?? 0,
         ]);
 
         return response()->json([
-            'status' => true,
-            'message' => 'Employee Created',
+            'status' => true, 
+            'message' => 'Employee Created', 
             'data' => $this->formatUserForFlutter($user)
         ], 201);
     }
 
     private function formatUserForFlutter($user)
     {
+        // Split name for UI
         $nameParts = explode(' ', $user->name, 2);
-        $firstName = $nameParts[0];
-        $lastName = $nameParts[1] ?? '';
 
         return [
-            'id' => $user->id,
-            'userID' => $user->email, // Using email as ID for display
-            'email' => $user->email,
-            'role' => 'employee',
-
-            'firstName'   => $firstName,
-            'lastName'    => $lastName,
-            'phoneNumber' => '0000000000', // Default if DB doesn't have it
-            'title'       => 'Employee',
-            'birthdate'   => '2000-01-01',
-            'gender'      => 0, // 0 = Male, 1 = Female
-            'avatar'      => '',
+            'id'            => $user->id,
+            'userID'        => $user->email,
+            'email'         => $user->email,
             
+            'annualBalance' => (double) $user->annual_balance,
+            'branchID'      => (int) $user->branch_id,
+            
+            'department'    => "0", 
+            'role'          => "0", 
+
+            // UI Helpers
+            'firstName'     => $nameParts[0],
+            'lastName'      => $nameParts[1] ?? '',
+            'title'         => 'Employee', 
+            'phoneNumber'   => '0000000000',
+            'birthdate'     => '2000-01-01',
+            'gender'        => 0,
+            'avatar'        => '',
             'createdAt'     => $user->created_at ? $user->created_at->toDateTimeString() : now()->toDateTimeString(),
-            'lastUpdatedAt' => $user->updated_at ? $user->updated_at->toDateTimeString() : now()->toDateTimeString(),
         ];
     }
 }
