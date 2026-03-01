@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\DepartmentController;
 
 /* http://127.0.0.1:8000/api/login
 http://127.0.0.1:8000/api/admin/Auth/register */
@@ -28,22 +29,11 @@ Route::group(['middleware'=>['permission:leave.manage'],'prefix' => 'admin'],fun
 
     Route::post('register', [AuthController::class,'register']);
 
-
-
-
-
-
-
-
 use App\Http\Controllers\Api\LeaveRequestController;
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/leaves', [LeaveRequestController::class, 'store']);
 });
-
-
-
-
 
 /* Route::middleware(['auth:api', 'permission:leave.manage'])->get('/test', function () {
     return auth()->user()->getRoleNames();
@@ -56,11 +46,15 @@ use App\Services\FcmService;
 
 
 // غيّر 'jwt.auth' للي عندك لو مختلف (مثلاً auth:api)
+use App\Http\Controllers\DashboardController;
+
 Route::middleware(['auth:api'])->group(function () {
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
     Route::post('/device-token', [DeviceTokenController::class, 'store']);
     Route::delete('/device-token', [DeviceTokenController::class, 'destroy']);
     Route::apiResource('branches', BranchController::class);
     Route::apiResource('employees', EmployeeController::class);
+    Route::apiResource('departments', DepartmentController::class);
 
     // مثال: الإشعار يروح للمستخدم الحالي
     Route::post('/notify-me', function (Request $request, FcmService $fcm) {

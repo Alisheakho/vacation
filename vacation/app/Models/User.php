@@ -26,7 +26,9 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'branch_id',
-        'annual_balance'
+        'department_id',
+        'annual_balance',
+        'role'
     ];
 
     /**
@@ -81,20 +83,20 @@ class User extends Authenticatable implements JWTSubject
     }
 public function getJWTCustomClaims()
 {
-    return [];
+    return [
+        'name' => $this->name,
+        'role' => $this->role,
+    ];
 }
 
-  /*      protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'branch_id',
-        'annual_balance',
-    ];
- */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
     }
 
     public function managedBranch()

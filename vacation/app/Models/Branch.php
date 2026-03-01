@@ -19,6 +19,11 @@ class Branch extends Model
         return $this->hasMany(User::class);
     }
 
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class);
+    }
+
     public function manager(): BelongsTo
     {
         return $this->belongsTo(User::class, 'manager_id');
