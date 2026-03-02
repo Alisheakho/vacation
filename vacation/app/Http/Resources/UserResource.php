@@ -17,7 +17,11 @@ class UserResource extends JsonResource
         return [
         'id'    => $this->id,
         'name'  => $this->name,
-        'email' => $this->email,
+      'employee_id' => $this->employee_id,
+        'section' => $this->section,
+        'jobe_title' => $this->jobe_title,
+         'branch' => new BranchResource($this->whenLoaded('branch')),
+    
         // أي بيانات أخرى خاصة باليوزر فقط
     ];
     }

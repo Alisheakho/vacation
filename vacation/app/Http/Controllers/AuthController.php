@@ -19,15 +19,16 @@ class AuthController extends Controller
         // -----------------------------
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
+            'employee_id'    => 'required|unique:users,employee_id',
             'password' => 'required|confirmed',
             'role'     => 'required|in:employee,branch_manager,hr,dept_manager',
-
+            'section' => 'nullable|string|max:255',
+            'jobe_title' => 'nullable|string|max:255',
             // أ) الموظف: ينضم لفرع موجود
             'branch_id' => 'required_if:role,employee|nullable|exists:branches,id',
 
             // ب) المدير ورئيس الفرع: اسم الفرع الجديد
-            'branch.name' => 'required_if:role,branch_manager,hr,dept_manager|string|max:255',
+            'branch.name' => 'required_if:role,branch_manager,hr|string|max:255',
             'branch.code' => 'nullable|string|max:10',
 
             // ج) رئيس الفرع: رقم الفرع الأب (عشان نربط الفرع الجديد تحته، وعشان نحط رئيس الفرع فيه)
@@ -42,9 +43,11 @@ class AuthController extends Controller
             // 3) إنشاء المستخدم
             $user = \App\Models\User::create([
                 'name'           => $validated['name'],
-                'email'          => $validated['email'],
                 'password'       => bcrypt($validated['password']),
                 'annual_balance' => 30,
+                'employee_id'    => $validated['employee_id'],
+                'section'        => $validated['section'] ?? null,
+                'jobe_title'     => $validated['jobe_title']??null,
             ]);
 
             // 4) المعالجة حسب الرتبة
@@ -54,7 +57,6 @@ class AuthController extends Controller
                 // 1. ينشئ الفرع الرئيسي (بدون أب)
                 $branch = \App\Models\Branch::create([
                     'name'       => $validated['branch']['name'],
-                    'code'       => $validated['branch']['code'] ?? null,
                     'parent_id'  => null, 
                     'manager_id' => $user->id, // هو يدير هذا الفرع
                 ]);
@@ -69,7 +71,6 @@ class AuthController extends Controller
                 // 1. ينشئ الفرع الفرعي (ويربطه بالفرع الأب)
                 $newBranch = \App\Models\Branch::create([
                     'name'       => $validated['branch']['name'],
-                    'code'       => $validated['branch']['code'] ?? null,
                     'parent_id'  => $validated['parent_branch_id'], // تابع للإدارة
                     'manager_id' => $user->id, // هو يدير الفرع الجديد
                 ]);
@@ -91,11 +92,12 @@ class AuthController extends Controller
             // 5) Assign Role
             $user->assignRole($validated['role']);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'User registered successfully.',
-                'data'    => $user->load('branch')
-            ], 201);
+        return response()->json([
+    'success' => true,
+    'message' => 'User registered successfully.',
+
+    'data'    => new \App\Http\Resources\UserResource($user->load('branch.manager')) 
+], 201);
         });
 
     } catch (\Exception $e) {
@@ -110,12 +112,13 @@ public function login(Request $request)
 {
     try {
         $validateData = $request->validate([
-            'email'    => 'required|string|email|max:255',
+            'employee_id'    => 'required|string|max:255',
             'password' => 'required|string|min:6',
         ]);
 
-        $user = User::where('email', $validateData['email'])->first();
-
+   $user = User::with(['branch.manager']) 
+            ->where('employee_id', $validateData['employee_id'])
+            ->first();
         if (!$user || !Hash::check($validateData['password'], $user->password)) {
             return response()->json([
                 'status'  => false,

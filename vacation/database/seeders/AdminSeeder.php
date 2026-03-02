@@ -10,7 +10,7 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = env('ADMIN_EMAIL');
+        $employeId = env('ADMIN_Number');
 
         // تأكد وجود رول admin
         if (!Role::where('name', 'admin')->exists()) {
@@ -18,11 +18,14 @@ class AdminSeeder extends Seeder
         }
 
         // أنشئ الأدمن لو غير موجود
-        if (!User::where('email', $email)->exists()) {
+        if (!User::where('employee_id', $employeId)->exists()) {
             $user = User::create([
                 'name' => 'Super Admin',
-                'email' =>'ali@gmail.com',
+                'employee_id' =>$employeId,
                 'password' => bcrypt('admin123'),
+                'section' => 'Administration',
+                'jobe_title' => 'System Administrator',
+                
             ]);
 
             $user->assignRole('admin');

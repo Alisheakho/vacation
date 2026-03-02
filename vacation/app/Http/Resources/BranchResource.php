@@ -17,7 +17,7 @@ class BranchResource extends JsonResource
 return [
             'id'      => $this->id,
             'name'    => $this->name,
-            'code'    => $this->code,
+           
             
             // 👇👇 هنا السحر: إرجاع المدير كـ Object كامل 👇👇
             // نستخدم whenLoaded عشان لو ما حملنا المدير ما يضرب الكود
