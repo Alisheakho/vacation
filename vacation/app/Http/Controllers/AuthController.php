@@ -14,6 +14,41 @@ class AuthController extends Controller
  public function register(Request $request)
 {
     try {
+        $currentUser = auth('api')->user();
+
+        // التحقق من الصلاحيات لإنشاء الحسابات
+        $requestedRole = $request->input('role');
+
+        // === قاعدة 1: فقط الأدمن يقدر يعمل حساب مدير إدارة ===
+        if ($requestedRole === 'dept_manager') {
+            if (!$currentUser || !$currentUser->hasRole('admin')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'فقط الأدمن يستطيع إنشاء حساب مدير إدارة',
+                ], 403);
+            }
+        }
+
+        // === قاعدة 2: HR يقدر يعمل employee و branch_manager بس ===
+        if ($currentUser && $currentUser->hasRole('hr')) {
+            if (!in_array($requestedRole, ['employee', 'branch_manager'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'HR يمكنه فقط إنشاء حسابات موظفين ورؤساء فروع',
+                ], 403);
+            }
+        }
+
+        // === قاعدة 3: مدير الإدارة يقدر يعمل كل شي ما عدا admin ===
+        if ($currentUser && $currentUser->hasRole('dept_manager')) {
+            if ($requestedRole === 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'مدير الإدارة لا يستطيع إنشاء حساب أدمن',
+                ], 403);
+            }
+        }
+
         // -----------------------------
         // 1) Validation
         // -----------------------------
@@ -61,7 +96,7 @@ class AuthController extends Controller
                     'manager_id' => $user->id, // هو يدير هذا الفرع
                 ]);
 
-                // 2. (تصحيح الغلطة الأولى): مدير الإدارة يكون بداخل فرعه
+                // 2. مدير الإدارة يكون بداخل فرعه
                 $user->branch_id = $branch->id;
                 $user->save();
 
@@ -75,9 +110,7 @@ class AuthController extends Controller
                     'manager_id' => $user->id, // هو يدير الفرع الجديد
                 ]);
 
-                // 2. (تصحيح الغلطة الثانية):
-                // رئيس الفرع لا نضعه في الفرع الجديد، بل نضعه في الفرع الأب (الإدارة)
-                // حسب طلبك: "بدي يتبع لمدير الإدارة"
+                // 2. رئيس الفرع نضعه في الفرع الأب
                 $user->branch_id = $validated['parent_branch_id']; 
                 $user->save();
 
@@ -124,6 +157,14 @@ public function login(Request $request)
                 'status'  => false,
                 'message' => 'Invalid credentials',
             ], 401);
+        }
+
+        // فحص الحظر
+        if ($user->isBanned()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'تم حظر حسابك. تواصل مع الإدارة.',
+            ], 403);
         }
 
         // إنشاء JWT Token

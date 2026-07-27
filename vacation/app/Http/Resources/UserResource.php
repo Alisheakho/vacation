@@ -17,12 +17,14 @@ class UserResource extends JsonResource
         return [
         'id'    => $this->id,
         'name'  => $this->name,
-      'employee_id' => $this->employee_id,
+        'employee_id' => $this->employee_id,
         'section' => $this->section,
         'jobe_title' => $this->jobe_title,
-         'branch' => new BranchResource($this->whenLoaded('branch')),
-    
-        // أي بيانات أخرى خاصة باليوزر فقط
+        'branch' => new BranchResource($this->whenLoaded('branch')),
+        'role' => $this->getRoleNames()->first(),
+        'is_banned' => (bool) $this->is_banned,
+        'annual_balance' => $this->annual_balance,
+        'created_at' => $this->created_at?->toDateTimeString(),
     ];
     }
 }

@@ -17,6 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // ⚡ الصلاحيات مع guard api
         // ============================
         $permissions = [
+            // صلاحيات الإجازات
             'leave.create',
             'leave.view.own',
             'leave.view.all',
@@ -24,6 +25,26 @@ class RolesAndPermissionsSeeder extends Seeder
             'leave.review.hr',     // HR
             'leave.approve.long',  // مدير إدارة
             'leave.manage',        // أدمن
+
+            // صلاحيات إدارة المستخدمين
+            'user.create',          // إنشاء مستخدم
+            'user.update',          // تعديل مستخدم
+            'user.delete',          // حذف مستخدم
+            'user.view',            // عرض المستخدمين
+            'user.ban',             // حظر/إلغاء حظر
+            'user.change_role',     // تغيير الرول
+
+            // صلاحيات إدارة الفروع
+            'branch.create',        // إنشاء فرع
+            'branch.update',        // تعديل فرع
+            'branch.delete',        // حذف فرع
+            'branch.view',          // عرض الفروع
+            'branch.assign_manager',    // تعيين مدير فرع
+            'branch.transfer_manager',  // نقل مدير فرع
+            'branch.remove_manager',    // إزالة مدير فرع
+
+            // صلاحية إنشاء مدير إدارة (أدمن فقط)
+            'user.create_dept_manager',
         ];
 
         foreach ($permissions as $perm) {
@@ -45,24 +66,54 @@ class RolesAndPermissionsSeeder extends Seeder
         // ⚡ ربط الصلاحيات مع الأدوار
         // ============================
 
+        // الموظف: فقط إنشاء إجازة ورؤية إجازاته
         $employee->syncPermissions([
             'leave.create',
             'leave.view.own',
         ]);
 
+        // HR: إدارة المستخدمين والفروع (ماعدا مدير الإدارة)
         $hr->syncPermissions([
             'leave.view.all',
             'leave.review.hr',
+            'user.create',
+            'user.update',
+            'user.delete',
+            'user.view',
+            'user.ban',
+            'user.change_role',
+            'branch.create',
+            'branch.update',
+            'branch.delete',
+            'branch.view',
+            'branch.assign_manager',
+            'branch.transfer_manager',
+            'branch.remove_manager',
         ]);
 
+        // رئيس الفرع
         $branchManager->syncPermissions([
             'leave.view.all',
             'leave.approve.short',
         ]);
 
+        // مدير الإدارة: نفس HR + إدارة كاملة
         $deptManager->syncPermissions([
             'leave.view.all',
             'leave.approve.long',
+            'user.create',
+            'user.update',
+            'user.delete',
+            'user.view',
+            'user.ban',
+            'user.change_role',
+            'branch.create',
+            'branch.update',
+            'branch.delete',
+            'branch.view',
+            'branch.assign_manager',
+            'branch.transfer_manager',
+            'branch.remove_manager',
         ]);
 
         // أدمن ياخد كل شي

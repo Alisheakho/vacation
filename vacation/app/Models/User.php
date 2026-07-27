@@ -26,7 +26,11 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'branch_id',
-        'annual_balance'
+        'annual_balance',
+        'employee_id',
+        'section',
+        'jobe_title',
+        'is_banned',
     ];
 
     /**
@@ -106,6 +110,16 @@ public function getJWTCustomClaims()
 public function deviceTokens()
 {
     return $this->hasMany(\App\Models\DeviceToken::class);
+}
+
+public function leaveRequests()
+{
+    return $this->hasMany(\App\Models\LeaveRequest::class);
+}
+
+public function isBanned(): bool
+{
+    return (bool) $this->is_banned;
 }
 
 }

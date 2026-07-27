@@ -12,6 +12,7 @@ class Branch extends Model
         'name',
         'code',
         'manager_id',
+        'parent_id',
     ];
 
     public function users(): HasMany
@@ -23,4 +24,23 @@ class Branch extends Model
     {
         return $this->belongsTo(User::class, 'manager_id');
     }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Branch::class, 'parent_id');
+    }
+
+    /**
+     * هل الفرع شاغر (بدون مدير)؟
+     */
+    public function isVacant(): bool
+    {
+        return is_null($this->manager_id);
+    }
 }
+
